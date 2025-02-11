@@ -2,22 +2,34 @@ name: Daily Commit
 
 on:
   schedule:
-    - cron: "30 5 * * *"  # Runs daily at 05:30 UTC (Change as needed)
-  workflow_dispatch:  # Allows manual triggering
+    - cron: "30 5 * * *"  # Runs daily at 05:30 UTC
+  workflow_dispatch:  # Allows manual runs
 
 jobs:
   commit:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Allow pushing changes
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false  # Disable default token handling
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "GitHub Action"
+          git config --global user.email "lisa.miranda@gramener.com"
 
       - name: Update File (lisa.miranda@gramener.com)
         run: |
           echo "Last run: $(date)" > last_run.txt
-          git config --global user.name "GitHub Action"
-          git config --global user.email "lisa.miranda@gramener.com"
           git add last_run.txt
           git commit -m "Daily update $(date)"
-          git push
+      
+      - name: Push Changes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Use GitHub Token for authentication
+        run: |
+          git push https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git HEAD:main
